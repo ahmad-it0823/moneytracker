@@ -1,68 +1,181 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Money Tracker</title>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Orbitron', sans-serif;
-      background: #0f0f1a;
-      color: #00ffea;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-    }
-    h1 { text-shadow: 0 0 10px #00ffea; }
-    .tracker {
-      background: #1a1a2e;
-      border-radius: 15px;
-      padding: 20px;
-      width: 300px;
-      box-shadow: 0 0 20px #00ffea;
-    }
-    input, button {
-      padding: 10px;
-      margin: 5px 0;
-      border-radius: 8px;
-      border: none;
-      outline: none;
-      width: 100%;
-      font-family: 'Orbitron', sans-serif;
-    }
-    input { background: #0f0f1a; color: #00ffea; border: 1px solid #00ffea; }
-    button { background: #00ffea; color: #0f0f1a; cursor: pointer; transition: 0.3s; }
-    button:hover { background: #00bfa5; }
-    ul { list-style: none; padding: 0; }
-    li { padding: 5px 0; border-bottom: 1px solid #00ffea; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Galaxy Money Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body {
+    margin: 0;
+    font-family: 'Orbitron', sans-serif;
+    background: radial-gradient(circle at 20% 20%, #0b0b1a, #0f0f1a 80%);
+    color: #00ffea;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px;
+  }
+  h1 {
+    text-align: center;
+    text-shadow: 0 0 15px #00ffea;
+    font-size: 1.8em;
+  }
+  .tracker {
+    background: rgba(26, 26, 46, 0.9);
+    border-radius: 15px;
+    padding: 15px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 0 25px #00ffea;
+  }
+  input, button {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 8px;
+    border: none;
+    outline: none;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.9em;
+  }
+  input {
+    background: #0f0f1a;
+    color: #00ffea;
+    border: 1px solid #00ffea;
+  }
+  button {
+    background: #00ffea;
+    color: #0f0f1a;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  button:hover {
+    background: #00bfa5;
+  }
+  ul {
+    list-style: none;
+    padding: 0;
+    max-height: 150px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+  }
+  li {
+    padding: 5px 0;
+    border-bottom: 1px solid #00ffea;
+    animation: fadeIn 0.5s ease;
+  }
+  #total {
+    font-size: 1.2em;
+    text-align: right;
+    margin-top: 5px;
+  }
+  canvas {
+    margin-top: 15px;
+  }
+  @keyframes fadeIn {
+    from {opacity:0; transform: translateY(-10px);}
+    to {opacity:1; transform: translateY(0);}
+  }
+  @media(max-width: 360px) {
+    h1 { font-size: 1.5em; }
+    input, button { font-size: 0.85em; padding: 8px; }
+  }
+</style>
 </head>
 <body>
-  <h1>💸 Money Tracker</h1>
-  <div class="tracker">
-    <input type="text" id="desc" placeholder="Description">
-    <input type="number" id="amount" placeholder="Amount">
-    <button onclick="addEntry()">Add</button>
-    <ul id="entries"></ul>
-    <h2>Total: $<span id="total">0</span></h2>
-  </div>
 
-  <script>
-    let total = 0;
-    function addEntry() {
-      const desc = document.getElementById('desc').value;
-      const amount = parseFloat(document.getElementById('amount').value);
-      if(!desc || isNaN(amount)) return;
-      total += amount;
-      const li = document.createElement('li');
-      li.textContent = `${desc}: $${amount}`;
-      document.getElementById('entries').appendChild(li);
-      document.getElementById('total').textContent = total;
-      document.getElementById('desc').value = '';
-      document.getElementById('amount').value = '';
+<h1>🌌 Galaxy Money Tracker</h1>
+
+<div class="tracker">
+  <input type="text" id="desc" placeholder="Description">
+  <input type="number" id="amount" placeholder="Amount">
+  <button onclick="addEntry()">Add Entry</button>
+  
+  <ul id="entries"></ul>
+  <h2>Total: $<span id="total">0</span></h2>
+
+  <canvas id="moneyChart" height="200"></canvas>
+</div>
+
+<script>
+let entries = JSON.parse(localStorage.getItem('entries')) || [];
+let amounts = JSON.parse(localStorage.getItem('amounts')) || [];
+let total = parseFloat(localStorage.getItem('total')) || 0;
+
+// Set up chart
+const ctx = document.getElementById('moneyChart').getContext('2d');
+const moneyChart = new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: entries,
+    datasets: [{
+      label: 'Amount',
+      data: amounts,
+      backgroundColor: 'rgba(0,255,234,0.6)',
+      borderColor: '#00ffea',
+      borderWidth: 1
+    }]
+  },
+  options: {
+    responsive: true,
+    animation: { duration: 800 },
+    scales: {
+      y: { beginAtZero: true, ticks: { color: '#00ffea' } },
+      x: { ticks: { color: '#00ffea' } }
+    },
+    plugins: {
+      legend: { labels: { color: '#00ffea' } }
     }
-  </script>
+  }
+});
+
+// Populate previous entries
+function renderEntries() {
+  const ul = document.getElementById('entries');
+  ul.innerHTML = '';
+  entries.forEach((desc, i) => {
+    const li = document.createElement('li');
+    li.textContent = `${desc}: $${amounts[i]}`;
+    ul.appendChild(li);
+  });
+  document.getElementById('total').textContent = total;
+}
+renderEntries();
+
+function addEntry() {
+  const desc = document.getElementById('desc').value.trim();
+  const amount = parseFloat(document.getElementById('amount').value);
+
+  if (!desc || isNaN(amount)) return;
+
+  // Update totals
+  total += amount;
+  document.getElementById('total').textContent = total;
+
+  // Add to arrays
+  entries.push(desc);
+  amounts.push(amount);
+
+  // Save to localStorage
+  localStorage.setItem('entries', JSON.stringify(entries));
+  localStorage.setItem('amounts', JSON.stringify(amounts));
+  localStorage.setItem('total', total);
+
+  // Update chart
+  moneyChart.data.labels = entries;
+  moneyChart.data.datasets[0].data = amounts;
+  moneyChart.update();
+
+  // Render list with animation
+  renderEntries();
+
+  // Reset inputs
+  document.getElementById('desc').value = '';
+  document.getElementById('amount').value = '';
+}
+</script>
+
 </body>
 </html>

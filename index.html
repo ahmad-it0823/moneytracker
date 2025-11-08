@@ -1,13 +1,94 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Basic Page</title>
+  <title>Money Tracker</title>
+  <style>
+    body {
+      background: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 30px;
+    }
+    input {
+      padding: 10px;
+      width: 150px;
+      font-size: 16px;
+      margin-bottom: 15px;
+      border-radius: 6px;
+      border: none;
+      outline: none;
+    }
+    button {
+      padding: 10px 18px;
+      margin: 5px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .add { background: #2ecc71; }
+    .spend { background: #e74c3c; }
+    .history {
+      margin-top: 30px;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: left;
+    }
+  </style>
 </head>
+
 <body>
-  <h1>Heading Level 1</h1>
-  <p>This is a paragraph of text on my web page.</p>
-  <a href="https://example.com">This is a link</a>
+  <h1>Money Tracker</h1>
+  <h2 id="balance">$0</h2>
+
+  <input id="amount" type="number" placeholder="Amount"><br>
+
+  <button class="add" onclick="addMoney()">+ Add</button>
+  <button class="spend" onclick="spendMoney()">- Spend</button>
+
+  <div class="history">
+    <h3>History</h3>
+    <ul id="historyList"></ul>
+  </div>
+
+  <script>
+    let balance = Number(localStorage.getItem("balance")) || 0;
+    let history = JSON.parse(localStorage.getItem("history")) || [];
+
+    function update() {
+      document.getElementById("balance").innerText = "$" + balance;
+      localStorage.setItem("balance", balance);
+
+      const list = document.getElementById("historyList");
+      list.innerHTML = "";
+      history.forEach(item => {
+        const li = document.createElement("li");
+        li.textContent = item;
+        list.appendChild(li);
+      });
+
+      localStorage.setItem("history", JSON.stringify(history));
+    }
+
+    function addMoney() {
+      const val = Number(document.getElementById("amount").value);
+      if (!val) return;
+      balance += val;
+      history.unshift("+ $" + val);
+      update();
+    }
+
+    function spendMoney() {
+      const val = Number(document.getElementById("amount").value);
+      if (!val) return;
+      balance -= val;
+      history.unshift("- $" + val);
+      update();
+    }
+
+    update();
+  </script>
 </body>
 </html>
